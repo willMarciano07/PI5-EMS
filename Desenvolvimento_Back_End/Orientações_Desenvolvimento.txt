@@ -1,0 +1,5 @@
+Nesta pasta conterá o conteúdo referente a desenvolvimento Back-End:
+
+- Data_Base: Pasta responsável por armazenar querys.
+
+- Development: Pasta Responsável por conter sub-pastas de código.

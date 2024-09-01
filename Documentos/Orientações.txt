@@ -1,0 +1,9 @@
+A cada desenvolvimento de documentação armazenaremos os seus respectivos documentos em pastas específicas.
+
+- Padrão Senac: Responsável por conter os documentos padrões fornecidos pela instituição.
+
+- Diagramas: Responsável por conter todos os diagramas do projeto
+	- Sendo que separemos por sub pastas, com os sub temas referentes a Diagrama.
+
+- Protótipo: Responsável por conter os protótipos do projeto.
+
