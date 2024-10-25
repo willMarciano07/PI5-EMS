@@ -1,0 +1,11 @@
+Executar Android Studio com Xampp
+Utilizaremos a máquina local para hospedar a API.
+1) Iniciar o Xampp e startar o serviço Apache  		--- OK 
+2) Abrir o Workbench MySql e se conectar ao banco de dados fornecido ao grupo    --- OK
+3) Abrir o CMD e digitar ipconfig, obter o ipv4 local e digitar no navegador --- OK
+4) Se abrir a tela de boas vindas do xampp, criar no windows explorer a pasta do xampp e colocar a API: C:\xampp\htdocs\api --- OK
+5) Fazer o download da pasta API no ava e inserir na pasta api do xampp. Observação: Os arquivos na API são um exemplo para modificar de acordo com o seu trabalho. --- OK
+6) Na baseUrl do Retrofit dentro do android studio você precisará compor http://ip/api/pastaDaAPI  --- OK
+
+PASSOS FINALIZADOS. 
+
