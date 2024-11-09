@@ -1,0 +1,293 @@
+Passo a Passo para Listagem de Produtos com Retrofit
+Requisitos:
+
+    A autenticaÃ§Ã£o de login jÃ¡ foi implementada.
+    Banco de dados MySQL remoto configurado.
+    Servidor PHP rodando em XAMPP com a API hospedada.
+
+
+Passo 1: Criar a Tabela PRODUTO no Banco de Dados Remoto
+A tabela PRODUTO serÃ¡ utilizada para armazenar os produtos que serÃ£o listados no aplicativo Android. Execute o seguinte comando SQL no banco de dados remoto:
+
+CREATE TABLE PRODUTO (
+    PRODUTO_ID INT AUTO_INCREMENT PRIMARY KEY,
+    PRODUTO_NOME VARCHAR(100),
+    PRODUTO_DESC VARCHAR(255),
+    PRODUTO_PRECO DECIMAL(10,2),
+    PRODUTO_IMAGEM VARCHAR(255),  -- URL da imagem do produto
+    CATEGORIA_ID INT,
+    PRODUTO_ATIVO TINYINT(1)
+);
+
+-- InserÃ§Ã£o de produtos de exemplo:
+INSERT INTO PRODUTO (PRODUTO_NOME, PRODUTO_DESC, PRODUTO_PRECO, PRODUTO_IMAGEM, CATEGORIA_ID, PRODUTO_ATIVO) 
+VALUES 
+('Produto A', 'DescriÃ§Ã£o do Produto A', 50.00, 'http://www.thyagoquintas.com.br/imagens/produtoA.jpg', 1, 1),
+('Produto B', 'DescriÃ§Ã£o do Produto B', 75.00, 'http://www.thyagoquintas.com.br/imagens/produtoB.jpg', 2, 1);
+
+
+Passo 2: Criar o Script PHP para Listagem de Produtos
+Crie um arquivo PHP (produtos.php) para buscar os produtos do banco de dados remoto e retornar os dados em formato JSON. Este script serÃ¡ consumido pela aplicaÃ§Ã£o Android via Retrofit, por isso deve ficar no mesmo local do login.php. c:/xampp/htdocs/meu_projeto_api/produtos.php
+
+Arquivo PHP produtos.php:
+<?php
+$host = 'www.thyagoquintas.com.br:3306';  // Host remoto
+$db   = 'bd_fornecido';                   // Nome do banco de dados 
+$user = 'user_fornecido';                 // UsuÃ¡rio do banco de dados 
+$pass = 'senha_fornecida';                // Senha do banco de dados 
+$charset = 'utf8mb4';
+
+$dsn = "mysql:host=$host;dbname=$db;charset=$charset";
+$options = [
+    PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+    PDO::ATTR_EMULATE_PREPARES   => false,
+];
+
+try {
+    $pdo = new PDO($dsn, $user, $pass, $options);
+    
+    // Query para buscar todos os produtos ativos
+    $sql = "SELECT PRODUTO_ID, PRODUTO_NOME, PRODUTO_DESC, PRODUTO_PRECO, PRODUTO_IMAGEM 
+            FROM PRODUTO 
+            WHERE PRODUTO_ATIVO = 1";
+    
+    $stmt = $pdo->query($sql);
+    $produtos = $stmt->fetchAll();
+
+    // Enviar os produtos no formato JSON
+    header('Content-Type: application/json');
+    echo json_encode($produtos);
+
+} catch (PDOException $e) {
+    echo "Erro de conexÃ£o: " . $e->getMessage();
+    exit;
+}
+?>
+
+    Salvar o Arquivo PHP: Salve o arquivo PHP em seu servidor XAMPP, por exemplo, c:/xampp/htdocs/meu_projeto_api/produtos.php.
+
+
+Passo 3: Criar o Modelo de Produto no Android
+Crie uma classe Kotlin para representar os produtos que serÃ£o recebidos da API no Android. Lembra-se do LoginResponse.kt para o processo de autenticaÃ§Ã£o? A classe Produto.kt farÃ¡ o mesmo papel.
+Produto.kt:
+
+data class Produto(
+    val PRODUTO_ID: Int,
+    val PRODUTO_NOME: String,
+    val PRODUTO_DESC: String,
+    val PRODUTO_PRECO: String,
+    val PRODUTO_IMAGEM: String
+)
+
+
+Passo 4: Criar o Layout XML para o Item da RecyclerView
+Crie um layout XML para cada item da RecyclerView que exibirÃ¡ os produtos.
+item_produto.xml:
+
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:padding="8dp">
+
+    <ImageView
+        android:id="@+id/imagemProduto"
+        android:layout_width="100dp"
+        android:layout_height="100dp"
+        android:scaleType="centerCrop" />
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:paddingStart="8dp">
+
+        <TextView
+            android:id="@+id/nomeProduto"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/descricaoProduto"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+
+        <TextView
+            android:id="@+id/precoProduto"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+    </LinearLayout>
+</LinearLayout>
+
+
+Passo 5: Incluir DependÃªncias no build.gradle
+Inclua as dependÃªncias necessÃ¡rias para Retrofit, Gson, OkHttp e Picasso no arquivo build.gradle (Module: app) alterando apenas a parte de dependÃªncias:
+DependÃªncias no build.gradle:
+
+dependencies {
+
+//MANTER O QUE HAVIA ANTES...
+    
+    // Interceptor para monitorar e registrar o trÃ¡fego de rede (Ãºtil para depuraÃ§Ã£o)
+    implementation ("com.squareup.okhttp3:logging-interceptor:4.9.1")
+    
+    // Picasso para carregar e exibir imagens de URLs no Android
+    implementation ("com.squareup.picasso:picasso:2.71828")
+    
+    // RecyclerView para exibir listas de itens no layout
+    implementation ("androidx.recyclerview:recyclerview:1.2.1")
+
+//MANTER O QUE HAVIA DEPOIS...
+
+}
+
+Salve e clique em Sync Now para sincronizar o projeto.
+
+
+Passo 6: Criar o Adapter para a RecyclerView
+Agora, crie a classe kotlin Adapter que serÃ¡ usada para a RecyclerView, utilizando a biblioteca Picasso para carregar as imagens dos produtos.
+CustomAdapter.kt:
+
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.widget.ImageView
+import android.widget.TextView
+import androidx.recyclerview.widget.RecyclerView
+import com.squareup.picasso.Picasso
+
+class CustomAdapter(private val dataSet: List<Produto>) :
+    RecyclerView.Adapter<CustomAdapter.ViewHolder>() {
+
+    class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+        val nome: TextView = view.findViewById(R.id.nomeProduto)
+        val descricao: TextView = view.findViewById(R.id.descricaoProduto)
+        val preco: TextView = view.findViewById(R.id.precoProduto)
+        val imagem: ImageView = view.findViewById(R.id.imagemProduto)
+    }
+
+    override fun onCreateViewHolder(viewGroup: ViewGroup, viewType: Int): ViewHolder {
+        val view = LayoutInflater.from(viewGroup.context)
+            .inflate(R.layout.item_produto, viewGroup, false)
+        return ViewHolder(view)
+    }
+
+    override fun onBindViewHolder(viewHolder: ViewHolder, position: Int) {
+        val produto = dataSet[position]
+        viewHolder.nome.text = produto.PRODUTO_NOME
+        viewHolder.descricao.text = produto.PRODUTO_DESC
+        viewHolder.preco.text = "R$ ${produto.PRODUTO_PRECO}"
+        Picasso.get().load(produto.PRODUTO_IMAGEM).into(viewHolder.imagem)
+    }
+
+    override fun getItemCount() = dataSet.size
+}
+
+
+Passo 7: Layout da Activity de Produtos com RecyclerView
+Crie um layout XML para a ProdutosActivity, contendo uma RecyclerView que exibirÃ¡ a lista de produtos.
+activity_produtos.xml:
+
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".ProdutosActivity">
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerViewProdutos"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+</androidx.constraintlayout.widget.ConstraintLayout>
+
+
+Passo 8: Implementar a ProdutosActivity para Exibir os Produtos
+Agora, implemente a ProdutosActivity para buscar os produtos da API e exibi-los na RecyclerView. Atente-se para trocar para seu ipv4 local .baseUrl("http://192.168.0.101/meu_projeto_api/").
+ProdutosActivity.kt:
+
+import android.os.Bundle
+import android.util.Log
+import androidx.appcompat.app.AppCompatActivity
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import okhttp3.OkHttpClient
+import okhttp3.logging.HttpLoggingInterceptor
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
+import retrofit2.http.GET
+
+class ProdutosActivity : AppCompatActivity() {
+
+    private lateinit var recyclerView: RecyclerView
+    private lateinit var adapter: CustomAdapter
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_produtos)
+
+        recyclerView = findViewById(R.id.recyclerViewProdutos)
+        recyclerView.layoutManager = LinearLayoutManager(this)
+
+        // ConfiguraÃ§Ã£o do Retrofit
+        val retrofit = Retrofit.Builder()
+            .baseUrl("http://192.168.0.101/meu_projeto_api/")  // NÃ£o se esqueÃƒÂ§a de trocar o ip pelo seu ip local
+            .addConverterFactory(GsonConverterFactory.create())
+            .client(configureOkHttpClient())
+            .build()
+
+        val apiService = retrofit.create(ApiService::class.java)
+
+        // Buscar produtos da API
+        apiService.getProdutos().enqueue(object : Callback<List<Produto>> {
+            override fun onResponse(call: Call<List<Produto>>, response: Response<List<Produto>>) {
+                if (response.isSuccessful) {
+                    val produtos = response.body() ?: emptyList()
+                    adapter = CustomAdapter(produtos)
+                    recyclerView.adapter = adapter
+                } else {
+                    Log.e("API Error", "Falha ao carregar os produtos. CÃ³digo: ${response.code()}")
+                }
+            }
+
+            override fun onFailure(call: Call<List<Produto>>, t: Throwable) {
+                Log.e("API Failure", "Erro ao carregar os produtos", t)
+            }
+        })
+    }
+
+    private fun configureOkHttpClient(): OkHttpClient {
+        val logging = HttpLoggingInterceptor { message -> Log.d("OkHttp", message) }
+        logging.level = HttpLoggingInterceptor.Level.BODY
+
+        return OkHttpClient.Builder()
+            .addInterceptor(logging)
+            .build()
+    }
+
+    interface ApiService {
+        @GET("produtos.php")
+        fun getProdutos(): Call<List<Produto>>
+    }
+}
+
+
+Passo 9: Testar a AplicaÃ§Ã£o
+
+Verificar a API no Navegador: Troque pelo seu ip local a seguir e acesse http://192.168.0.101/meu_projeto_api/produtos.php no navegador para verificar se a API estÃ¡ retornando os produtos em formato JSON.
+
+Executar o Aplicativo Android:
+Conecte seu dispositivo Android ou inicie um emulador.
+ApÃ³s o login bem-sucedido, a ProdutosActivity serÃ¡ iniciada e exibirÃ¡ a lista de produtos cadastrados no banco de dados remoto.

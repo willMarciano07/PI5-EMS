@@ -45,6 +45,14 @@ dependencies {
     androidTestImplementation("androidx.test.ext:junit:1.2.1")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.6.1")
 
+    // Interceptor para monitorar e registrar o trÃ¡fego de rede (Ãºtil para depuraÃ§Ã£o)
+    implementation ("com.squareup.okhttp3:logging-interceptor:4.9.1")
+
+    // Picasso para carregar e exibir imagens de URLs no Android
+    implementation ("com.squareup.picasso:picasso:2.71828")
+
+    // RecyclerView para exibir listas de itens no layout
+    implementation ("androidx.recyclerview:recyclerview:1.2.1")
 
     // Retrofit
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
