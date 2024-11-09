@@ -1,0 +1,270 @@
+Inicialmente, vamos configurar o ambiente com XAMPP (Banco de Dados Remoto e Acesso via IP).
+
+XAMPP
+O XAMPP simula um servidor local (ou seja, na prÃ³pria mÃ¡quina). Vamos utilizÃ¡-lo para hospedar os arquivos da nossa API, que nada mais sÃ£o do que o cÃ³digo que serÃ¡ chamado pelo Android (quando solicitado) e se conectarÃ¡ ao banco de dados para realizar a aÃ§Ã£o requisitada pelo aplicativo.
+
+
+Passo 1: Instalar o XAMPP (verifique antes se ele jÃ¡ estÃ¡ instalado. Se sim, pule para o segundo passo)
+
+Baixe e instale o XAMPP em https://www.apachefriends.org/pt_br/index.html.
+
+
+Passo 2: Acessar o XAMPP
+Execute o XAMPP e clique em Start na linha do Apache. Desta forma, vocÃª ativarÃ¡ o serviÃ§o Apache (para hospedar seu arquivo PHP). Quando ligar a mÃ¡quina certifique-se que o serviÃ§o apache esteja ligado.
+
+
+Passo 3: Obtendo o EndereÃ§o IPv4 Local
+Verifique o endereÃ§o IPv4 local com o comando ipconfig. Vamos ver como executar o comando ipconfig para acessar o servidor local na mesma rede:
+
+    Abra o Prompt de Comando (pressione Win + R, digite cmd e pressione Enter).
+
+    No prompt, digite o seguinte comando e pressione Enter:
+    ipconfig
+
+    Procure o campo "EndereÃ§o IPv4" sob a sessÃ£o correspondente Ã  sua conexÃ£o de rede (Wi-Fi ou Ethernet).
+
+    Anote o endereÃ§o IPv4 (exemplo: 192.168.0.101). Esse endereÃ§o serÃ¡ usado para acessar o servidor PHP do XAMPP no navegador e na aplicaÃ§Ã£o Android. Durante o passo a passo, utilizaremos esse nÃºmero de IP, mas vocÃª precisarÃ¡ substituÃ­-lo pelo seu ipv4 listado no ipconfig. Se vocÃª jÃ¡ encontrou o ipv4 local, escreva-o no navegador para ver se abre a tela de boas vindas do xampp. Se isto ocorrer entÃ£o atÃ© agora estÃ¡ tudo correto.
+
+
+Passo 4: Configurando o Banco de Dados Remoto
+Use o banco de dados remoto fornecido obtendo as informaÃ§Ãµes de conexÃ£o (host, nome do banco, usuÃ¡rio e senha que foram dados ao seu grupo). Ã‰ importante que vocÃª crie as tabelas e os campos que serÃ£o consultados. Neste exemplo, utilizaremos a tabela USUARIO com os seguintes campos:
+
+    USUARIO_ID: Int
+    USUARIO_NOME: Varchar
+    USUARIO_EMAIL: Varchar
+    USUARIO_SENHA: Varchar
+    USUARIO_CPF: Varchar
+
+Dica SQL para criaÃ§Ã£o da tabela:
+CREATE TABLE USUARIO (
+  USUARIO_ID INT AUTO_INCREMENT PRIMARY KEY,
+  USUARIO_NOME VARCHAR(100),
+  USUARIO_EMAIL VARCHAR(100),
+  USUARIO_SENHA VARCHAR(100),
+  USUARIO_CPF VARCHAR(11)
+);
+
+INSERT INTO USUARIO (USUARIO_NOME, USUARIO_EMAIL, USUARIO_SENHA, USUARIO_CPF) 
+VALUES ('teste', 'andre@teste.com', '123', '38312345621');
+
+
+Passo 5: CriaÃ§Ã£o do Script PHP para o Login
+Crie um arquivo PHP para realizar a autenticaÃ§Ã£o de login e retornar os dados em formato JSON. O arquivo serÃ¡ responsÃ¡vel por se conectar ao banco de dados e verificar se o usuÃ¡rio possui o login e senha informados. Veja o exemplo abaixo:
+Arquivo PHP de login (login.php):
+
+<?php 
+$host = 'www.thyagoquintas.com.br:3306';
+$db   = 'db_fornecido';
+$user = 'user_fornecido';
+$pass = 'senha_fornecida';
+$charset = 'utf8mb4';
+
+$dsn = "mysql:host=$host;dbname=$db;charset=$charset";
+$options = [
+    PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+    PDO::ATTR_EMULATE_PREPARES   => false,
+];
+
+try {
+    $pdo = new PDO($dsn, $user, $pass, $options);
+
+    // Receber usuÃƒÂ¡rio e senha via GET
+    $usuario = isset($_GET['usuario']) ? $_GET['usuario'] : '';
+    $senha = isset($_GET['senha']) ? $_GET['senha'] : '';
+
+    // Query para verificar as credenciais
+    $sql = "SELECT USUARIO_ID as usuarioId, USUARIO_NOME as usuarioNome, USUARIO_EMAIL as usuarioEmail, USUARIO_SENHA as usuarioSenha, USUARIO_CPF as usuarioCpf 
+            FROM USUARIO 
+            WHERE USUARIO_EMAIL = :usuario AND USUARIO_SENHA = :senha";
+    
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute(['usuario' => $usuario, 'senha' => $senha]);
+
+    $usuarios = $stmt->fetchAll();
+
+    header('Content-Type: application/json');
+    echo json_encode($usuarios);
+
+} catch (\PDOException $e) {
+    echo "Erro de conexÃƒÂ£o: " . $e->getMessage();
+    exit;
+}
+?>
+
+Salve este arquivo na pasta do seu servidor XAMPP, por exemplo: c:/xampp/htdocs/meu_projeto_api/login.php.
+
+Passo 6: ConfiguraÃ§Ã£o do Retrofit no Android Studio
+No Android Studio, vocÃª utilizarÃ¡ o Retrofit para fazer requisiÃ§Ãµes HTTP ao servidor local. Por isso, Ã© necessÃ¡rio instalar o pacote da Retrofit no Grandle Scripts > build.gradle.kts (app). No final do gradle vocÃª encontrarÃ¡ o bloco de dependÃªncias:
+
+dependencies {
+
+//Mantenha o que estiver antes...
+    // Retrofit para requisiÃ§Ãµes HTTP e Gson para parse de JSON
+
+    implementation (libs.retrofit)
+    implementation (libs.converter.gson)
+    implementation (libs.converter.scalars)
+
+    //Mantenha o que estiver apÃ³s...
+
+}
+
+Salve o arquivo e clique em Sync Now na tarja azul que deve surgir. Sempre que vocÃª modifica este arquivo o Android Studio pedirÃ¡ para fazer a sincronizaÃ§Ã£o de bibliotecas para ver se precisa baixar algum pacote de bibliotecas.
+
+O pacote da Retrofit Ã© necessÃ¡rio para fazer a requisiÃ§Ã£o HTTP ao servidor PHP e verificar as credenciais do usuÃ¡rio. 
+
+
+Passo 7: Crie uma empty view activity chamada LoginActivity. No passo a passo, faremos a adaptaÃ§Ã£o dos arquivos da activity.
+
+Solicito atenÃ§Ã£o especial para as linhas .baseUrl("http://192.168.0.101/meu_projeto_api/") e @GET("login.php"). Como dito anteriormente, o IP deve ser substituÃ­do pelo da sua mÃ¡quina.
+Aproveito para ressaltar que a primeira linha de todo arquivo '.kt' de Activity possui em sua primeira linha "package caminho do arquivo" sendo que, cada projeto possui um package diferente. Portanto Ã© importante sempre Manter esta linha.
+
+CÃ³digo Kotlin da LoginActivity.kt:
+
+import android.content.Intent
+import android.os.Bundle
+import android.widget.Button
+import android.widget.EditText
+import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
+import retrofit2.http.GET
+import retrofit2.http.Query
+
+class LoginActivity : AppCompatActivity() {
+
+    private lateinit var emailEditText: EditText
+    private lateinit var passwordEditText: EditText
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_login)
+
+        emailEditText = findViewById(R.id.emailEditText)
+        passwordEditText = findViewById(R.id.passwordEditText)
+        val loginButton: Button = findViewById(R.id.loginButton)
+
+        loginButton.setOnClickListener {
+            blockLogin()
+        }
+    }
+
+    private fun blockLogin() {
+        val email = emailEditText.text.toString().trim()
+        val password = passwordEditText.text.toString().trim()
+
+        val retrofit = Retrofit.Builder()
+            .baseUrl("http://192.168.0.101/meu_projeto_api/")
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+
+        val apiService = retrofit.create(ApiService::class.java)
+
+        val call = apiService.login(email, password)
+        call.enqueue(object : Callback<List<LoginResponse>> {
+            override fun onResponse(
+                call: Call<List<LoginResponse>>,
+                response: Response<List<LoginResponse>>
+            ) {
+                if (response.isSuccessful && response.body() != null) {
+                    val loginResponses = response.body()!!
+                    if (loginResponses.isNotEmpty()) {
+                        val intent = Intent(this@LoginActivity, ProdutosActivity::class.java)
+                        startActivity(intent)
+                        finish()
+                    } else {
+                        Toast.makeText(this@LoginActivity, "UsuÃƒÂ¡rio ou senha invÃƒÂ¡lidos", Toast.LENGTH_LONG).show()
+                    }
+                } else {
+                    Toast.makeText(this@LoginActivity, "Erro no login", Toast.LENGTH_LONG).show()
+                }
+            }
+
+            override fun onFailure(call: Call<List<LoginResponse>>, t: Throwable) {
+                Toast.makeText(this@LoginActivity, "Erro: ${t.message}", Toast.LENGTH_LONG).show()
+            }
+        })
+    }
+
+    interface ApiService {
+        @GET("login.php")
+        fun login(
+            @Query("usuario") usuario: String,
+            @Query("senha") senha: String
+        ): Call<List<LoginResponse>>
+    }
+}
+
+
+Passo 8: Estabeleceremos a seguir a interface grÃ¡fica.
+Layout XML da LoginActivity (activity_login.xml):
+
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <EditText
+        android:id="@+id/emailEditText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Email"
+        android:inputType="textEmailAddress"
+        android:minHeight="48dp" />
+
+    <EditText
+        android:id="@+id/passwordEditText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:hint="Password"
+        android:inputType="textPassword"
+        android:minHeight="48dp" />
+
+    <Button
+        android:id="@+id/loginButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Login"
+        android:layout_marginTop="16dp"/>
+</LinearLayout>
+
+
+Passo 9: Perceba que precisamos criar a classe de retorno da retrofit chamada LoginResponse:
+
+data class LoginResponse(val usuarioId: Int, val usuarioNome: String, val usuarioEmail: String, val usuarioSenha: String, val usuarioCpf: String)
+
+Esta classe recebe os dados que a API trÃ¡s do banco de dados.
+
+
+Passo 10: ConfiguraÃ§Ã£o do AndroidManifest.xml
+Ã‰ necessÃ¡rio adicionar as permissÃµes de uso da internet e habilitar o ClearText no arquivo AndroidManifest.xml pois estamos utilizando requisiÃ§Ãµes http e nÃ£o https:
+
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-permission android:name="android.permission.INTERNET" /> <!-- Habilitando uso da internet pelo app -->
+
+    <application
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.MyApplication"
+
+        android:usesCleartextTraffic="true"> <!-- Habilitando ClearText -->
+        
+        <activity ........... Mantenha o que havia....
+
+</manifest>
+
+
+Passo 11: Activity destino da Activity de Login
+Observe que a activity de Login necessita ir para a activity de listagem de produtos. Crie portanto a activity ProdutosActivity e teste a aplicaÃ§Ã£o com o usuÃƒÂ¡rio e senha incluÃ­dos no banco de dados. IMPORTANTE: Pode ser que sua activity principal nÃ£o seja LoginActivity. Para que a tela de login seja a primeira a ser executada, abra o arquivo de AndroidManifest.xml novamente e dentro dele troque onde estiver MainActivity por LoginActivity, e onde estiver LoginActivity por MainActivity

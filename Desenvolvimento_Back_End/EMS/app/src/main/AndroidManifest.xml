@@ -22,6 +22,18 @@
             android:exported="false" />
 
         <activity
+            android:name="com.example.ems.ProdutosActivity"
+            android:exported="false" />
+
+        <activity
+            android:name="com.example.ems.EditarProdutoActivity"
+            android:exported="false" />
+
+        <activity
+            android:name="com.example.ems.IncluirProdutoActivity"
+            android:exported="false" />
+
+        <activity
             android:name="com.example.ems.LoginActivity"
             android:exported="true">
             <intent-filter>

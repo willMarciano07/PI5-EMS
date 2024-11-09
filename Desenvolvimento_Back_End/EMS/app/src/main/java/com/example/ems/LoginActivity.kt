@@ -51,14 +51,7 @@ class LoginActivity : AppCompatActivity() {
                 if (response.isSuccessful && response.body() != null) {
                     val loginResponses = response.body()!!
                     if (loginResponses.isNotEmpty()) {
-                        val intent = Intent(this@LoginActivity, MainActivity::class.java)
-
-                        val loginResponse = loginResponses[0]
-
-                        intent.putExtra("usuario", loginResponse.usuario_Login)
-                        intent.putExtra("senha", loginResponse.usuario_Senha)
-
-
+                        val intent = Intent(this@LoginActivity, ProdutosActivity::class.java)
                         startActivity(intent)
                         finish()
                     } else {
@@ -85,10 +78,12 @@ class LoginActivity : AppCompatActivity() {
     }
 
     interface ApiService {
-        @GET("login/")
+        @GET("login.php")
         fun login(
             @Query("usuario") usuario: String,
             @Query("senha") senha: String
         ): Call<List<LoginResponse>>
     }
 }
+
+
